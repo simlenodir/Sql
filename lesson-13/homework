@@ -1,0 +1,90 @@
+drop table TestMax
+
+CREATE TABLE TestMax
+(
+Year1 INT
+,Max1 INT
+,Max2 INT
+,Max3 INT
+)
+
+INSERT INTO TestMax 
+VALUES
+ (2001,10,101,87)
+,(2002,103,19,88)
+,(2003,21,23,89)
+,(2004,27,28,91)
+
+with cte_test as 
+(
+	select T.Year1
+	,T.Max1 as maxValue
+	,1 as col_index 
+	from TestMax T
+	
+	union all
+
+	select t1.Year1
+	, case col_index
+	when 1 then Max2 
+	when 2 then Max3
+	end as maxValue,
+	col_index + 1
+	from cte_test
+	inner join TestMax as t1
+	on t1.Year1 = cte_test.Year1
+	where col_index < 3
+
+)
+select Year1, MAX(maxValue) as MaxValue
+	from cte_test
+	group by cte_test.Year1
+
+select * from TestMax
+--Puzzle 5.
+--In this puzzle you have to find employees and their managers with their hierarchy.
+--Please check out the sample input and expected output for details.
+
+--Table DDL:
+drop table Employees
+CREATE TABLE Employees
+(EmpID INT, EmpName VARCHAR(20), ReportsTo INT)
+ 
+--Insert Data
+INSERT INTO Employees(EmpID, EmpName, ReportsTo)
+SELECT 1, 'Jacob', NULL UNION ALL
+SELECT 2, 'Rui', NULL UNION ALL
+SELECT 3, 'Jacobson', NULL UNION ALL
+SELECT 4, 'Jess', 1 UNION ALL
+SELECT 5, 'Steve', 1 UNION ALL
+SELECT 6, 'Bob', 1 UNION ALL
+SELECT 7, 'Smith', 2 UNION ALL
+SELECT 8, 'Bobbey', 2 UNION ALL
+SELECT 9, 'Steffi', 3 UNION ALL
+SELECT 10, 'Bracha', 3 UNION ALL
+SELECT 11, 'John', 5 UNION ALL
+SELECT 12, 'Michael', 6 UNION ALL
+SELECT 13, 'Paul', 6 UNION ALL
+SELECT 14, 'Lana', 7 UNION ALL
+SELECT 15, 'Johnson', 7 UNION ALL
+SELECT 16, 'Mic', 8 UNION ALL
+SELECT 17, 'Stev', 8 UNION ALL
+SELECT 18, 'Paulson', 9 UNION ALL
+SELECT 19, 'Jessica', 10
+
+select * from Employees
+
+
+with emp_hyp as 
+(
+	select E.EmpID, E.EmpName, 1 as Level, cast(EmpName as varchar(Max)) as hierarchyPath
+		from Employees AS E
+		where E.ReportsTo is null
+	union all
+	select E1.EmpID, E1.EmpName, eh.Level +1, cast(eh.hierarchyPath + ',' + E1.EmpName as varchar(max))
+		from Employees AS E1
+		inner join emp_hyp as eh on	eh.EmpId = E1.ReportsTo														
+)
+
+select * from emp_hyp 
+order by emp_hyp.hierarchyPath;
